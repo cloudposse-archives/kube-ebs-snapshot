@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+export DESCRIPTION=${DESCRIPTION:-"This is snapshot create automaticaly by kube-ebs-snapshot"}
+
+echo "Creating snapshots based on PVC"
+
+kubectl get pod --selector=$1 -o jsonpath='{.items[*].spec.volumes[?(@.persistentVolumeClaim)].persistentVolumeClaim.claimName}' | \
+ xargs -I {} kubectl get persistentvolumeclaims -o jsonpath='{.items[?(@.metadata.name=="{}")].spec.volumeName}' | \
+ xargs -I {} kubectl get persistentvolume -o jsonpath='{.items[?(@.metadata.name=="{}")].spec.awsElasticBlockStore.volumeID}' | \
+ cut -d'/' -f3,4 | sed "s#/#\n#" | \
+ xargs -n 2 -r bash -c 'aws ec2 --region ${0::-1} create-snapshot --volume-id $1 --description "$DESCRIPTION"'
+
+echo "Creating snapshots based on awsElasticBlock volumes"
+
+kubectl get pod --selector=$1 -o jsonpath='{.items[*].spec.volumes[?(@.awsElasticBlockStore)].awsElasticBlockStore.volumeID}' | \
+ cut -d'/' -f3,4 | sed "s#/#\n#" | \
+ xargs -n 2 -r bash -c 'aws ec2 --region ${0::-1} create-snapshot --volume-id $1 --description "$DESCRIPTION"'
+
+echo "Done"
