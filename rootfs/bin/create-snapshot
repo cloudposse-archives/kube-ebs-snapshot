@@ -2,9 +2,19 @@
 
 export DESCRIPTION=${DESCRIPTION:-"This is snapshot create automaticaly by kube-ebs-snapshot"}
 
+NAMESPACE=$1
+SELECTOR=$2
+
+if [ $NAMESPACE == "all" ];
+then
+  NAMESPACE_FLAG="--all-namespaces=true"
+else
+  NAMESPACE_FLAG="--namespace=$NAMESPACE"
+fi
+
 echo "Creating snapshots based on PVC"
 
-kubectl get pod --selector=$1 -o jsonpath='{.items[*].spec.volumes[?(@.persistentVolumeClaim)].persistentVolumeClaim.claimName}' | \
+kubectl get pod $NAMESPACE_FLAG --selector=$SELECTOR -o jsonpath='{.items[*].spec.volumes[?(@.persistentVolumeClaim)].persistentVolumeClaim.claimName}' | \
  xargs -I {} kubectl get persistentvolumeclaims -o jsonpath='{.items[?(@.metadata.name=="{}")].spec.volumeName}' | \
  xargs -I {} kubectl get persistentvolume -o jsonpath='{.items[?(@.metadata.name=="{}")].spec.awsElasticBlockStore.volumeID}' | \
  cut -d'/' -f3,4 | sed "s#/#\n#" | \
