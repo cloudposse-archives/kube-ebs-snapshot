@@ -1,6 +1,6 @@
 FROM alpine:3.4
 
-ARG K8S_VERSION=v1.5.1
+ARG K8S_VERSION=v1.5.2
 
 RUN apk update \
     && apk add unzip \
