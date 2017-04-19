@@ -23,18 +23,19 @@ else
 fi
 
 echo "Creating snapshots based on PVC"
+
 kubectl get pod $NAMESPACE_FLAG --selector=$SELECTOR -o jsonpath="{.items[*].spec.volumes[$NAME_FILTER].persistentVolumeClaim.claimName}" | \
  xargs -I {} kubectl get persistentvolumeclaims -o jsonpath='{.items[?(@.metadata.name=="{}")].spec.volumeName}' | \
  xargs -I {} kubectl get persistentvolume -o jsonpath='{.items[?(@.metadata.name=="{}")].spec.awsElasticBlockStore.volumeID}' | \
  cut -d'/' -f3,4 | sed "s#/#\n#" | \
  xargs -n 2 -r bash -c \
-  'aws ec2 --region ${0::-1} create-snapshot --volume-id $1 --description "$DESCRIPTION" | jq .SnapshotId | aws ec2 --region ${0::-1} create-tags --tags $TAGS'
+  'REGION=${0::-1} aws ec2 --region $REGION create-snapshot --volume-id $1 --description "$DESCRIPTION" | jq .SnapshotId | xargs -I {} aws ec2 --region $REGION create-tags  --resources {} --tags $TAGS'
 
 echo "Creating snapshots based on awsElasticBlock volumes"
 
 kubectl get pod $NAMESPACE_FLAG --selector=$SELECTOR -o jsonpath="{.items[*].spec.volumes[$NAME_FILTER].awsElasticBlockStore.volumeID}" | \
  cut -d'/' -f3,4 | sed "s#/#\n#" | \
  xargs -n 2 -r bash -c \
- 'aws ec2 --region ${0::-1} create-snapshot --volume-id $1 --description "$DESCRIPTION" | jq .SnapshotId | aws ec2 --region ${0::-1} create-tags --tags $TAGS'
+  'REGION=${0::-1} aws ec2 --region $REGION create-snapshot --volume-id $1 --description "$DESCRIPTION" | jq .SnapshotId | xargs -I {} aws ec2 --region $REGION create-tags  --resources {} --tags $TAGS'
 
 echo "Done"
