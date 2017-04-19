@@ -2,9 +2,13 @@ FROM alpine:3.4
 
 ARG K8S_VERSION=v1.5.6
 
+ENV DESCRIPTION
+ENV EXTERNAL_ARGS
+ENV TAGS
+
 RUN apk update \
     && apk add unzip \
-          python make bash \
+          python make bash jq \
           bash-completion && \
           mkdir /etc/bash_completion.d/
 
