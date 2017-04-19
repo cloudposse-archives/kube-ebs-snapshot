@@ -19,7 +19,7 @@ RUN unzip awscli-bundle.zip \
     && rm awscli-bundle.zip \
     && rm -rf awscli-bundle \
     && ln -s /usr/local/aws/bin/aws_bash_completer /etc/bash_completion.d/aws.sh \
-    && ln -s /usr/local/aws/bin/aws_completer /usr/local/bin/
+    && ln -s /us-r/local/aws/bin/aws_completer /usr/local/bin/
 
 ADD rootfs /
 
