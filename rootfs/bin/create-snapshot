@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-export DESCRIPTION=${DESCRIPTION:-"This is snapshot create automaticaly by kube-ebs-snapshot"}
+set -o pipefail
+
+export DESCRIPTION=${DESCRIPTION:-"This snapshot was created automaticaly by kube-ebs-snapshot"}
 export EXTERNAL_ARGS=${EXTERNAL_ARGS:-}
 export TAGS=${TAGS:-}
 
@@ -22,7 +24,7 @@ else
   NAME_FILTER="?(@.name==\"$NAME\")"
 fi
 
-echo "Creating snapshots based on PVC"
+echo "Creating snapshots based on $NAME PVC in the $NAMESPACE namespace"
 
 kubectl get pod $NAMESPACE_FLAG --selector=$SELECTOR -o jsonpath="{.items[*].spec.volumes[$NAME_FILTER].persistentVolumeClaim.claimName}" | \
  xargs -I {} kubectl get persistentvolumeclaims -o jsonpath='{.items[?(@.metadata.name=="{}")].spec.volumeName}' | \
@@ -31,7 +33,7 @@ kubectl get pod $NAMESPACE_FLAG --selector=$SELECTOR -o jsonpath="{.items[*].spe
  xargs -n 2 -r bash -c \
   'export REGION=${0::-1} && aws ec2 --region $REGION create-snapshot --volume-id $1 --description "$DESCRIPTION" | jq -r .SnapshotId | xargs -I {} aws ec2 --region $REGION create-tags  --resources {} --tags $TAGS'
 
-echo "Creating snapshots based on awsElasticBlock volumes"
+echo "Creating snapshots based on $NAME awsElasticBlock in the $NAMESPACE namespace"
 
 kubectl get pod $NAMESPACE_FLAG --selector=$SELECTOR -o jsonpath="{.items[*].spec.volumes[$NAME_FILTER].awsElasticBlockStore.volumeID}" | \
  cut -d'/' -f3,4 | sed "s#/#\n#" | \
